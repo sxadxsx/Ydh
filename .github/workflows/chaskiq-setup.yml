@@ -20,12 +20,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git postgresql redis-server imagemagick
 
-    - name: Set up PostgreSQL
+    - name: Configure PostgreSQL
       run: |
         sudo service postgresql start
-        psql -c "CREATE USER chaskiq WITH PASSWORD 'password';" -U postgres
-        psql -c "ALTER USER chaskiq WITH SUPERUSER;" -U postgres
-        psql -c "CREATE DATABASE chaskiq_development OWNER chaskiq;" -U postgres
+        sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+
+    - name: Set up PostgreSQL
+      env:
+        PGPASSWORD: postgres
+      run: |
+        psql -U postgres -c "CREATE USER chaskiq WITH PASSWORD 'password';"
+        psql -U postgres -c "ALTER USER chaskiq WITH SUPERUSER;"
+        psql -U postgres -c "CREATE DATABASE chaskiq_development OWNER chaskiq;"
 
     - name: Install Bundler
       run: gem install bundler
