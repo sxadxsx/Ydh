@@ -1,0 +1,44 @@
+name: Setup Chaskiq
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Ruby
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git postgresql redis-server imagemagick
+
+    - name: Set up PostgreSQL
+      run: |
+        sudo service postgresql start
+        psql -c "CREATE USER chaskiq WITH PASSWORD 'password';" -U postgres
+        psql -c "ALTER USER chaskiq WITH SUPERUSER;" -U postgres
+        psql -c "CREATE DATABASE chaskiq_development OWNER chaskiq;" -U postgres
+
+    - name: Install Bundler
+      run: gem install bundler
+
+    - name: Install gems
+      run: bundle install
+
+    - name: Set up Chaskiq
+      run: |
+        cp .env.example .env
+        sed -i 's/ADMIN_EMAIL=.*/ADMIN_EMAIL=your@email.com/' .env
+        sed -i 's/ADMIN_PASSWORD=.*/ADMIN_PASSWORD=123456/' .env
+        bundle exec rails db:setup
+
+    - name: Run tests
+      run: bundle exec rspec
